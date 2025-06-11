@@ -1,0 +1,26 @@
+# project specific
+tmp/
+logs/
+
+# IDE and Mac related
+*.swp
+.vscode/
+.DS_Store
+
+# Python
+__pycache__
+__pycache__/
+
+# node
+node_modules/
+build/
+dist/
+.npm/
+.cache/
+.tmp/
+package-lock.json
+
+
+# Environments
+myenv/
+.venv/
