@@ -9,9 +9,12 @@ SEED          = 0
 TRAIN_UPTO    = 1000        # integers 1…1000 for training
 BATCH_SIZE    = 32
 LR            = 1e-2  # Starting LR, will decay to 1e-6
-EPOCHS        = 50000         # converges in < 1 s on CPU
+EPOCHS        = 5000         # converges in < 1 s on CPU
 
 torch.manual_seed(SEED)
+
+# Visualization related params
+NUM_PLOTS     = 10 # number of plots/steps to show for viz
 
 # -------------- 2. Dataset -------------------------
 # Generate column vectors [[1], [2], …] so they match nn.Linear's (N, 1) expectation
@@ -74,11 +77,10 @@ for epoch in range(EPOCHS):
     scheduler.step()
         
     # Optional tiny log
-    if (epoch+1) % 5000 == 0:
+    if (epoch+1) % (EPOCHS//NUM_PLOTS) == 0:
         w = model[0].weight.item()
         current_lr = optimiser.param_groups[0]['lr']
         print(f"epoch {epoch+1:3d}  loss={loss.item():.6f}  weight≈{w:.10f}  lr={current_lr:.2e}")
-
 # -------------- 4. Demo on unseen data -------------
 model.eval()
 test_nums = torch.tensor([[float(torch.randint(1, 10000, (1,))[0])] for _ in range(3)])
