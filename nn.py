@@ -74,7 +74,7 @@ for epoch in range(EPOCHS):
     scheduler.step()
         
     # Optional tiny log
-    if (epoch+1) % 1000 == 0:
+    if (epoch+1) % 5000 == 0:
         w = model[0].weight.item()
         current_lr = optimiser.param_groups[0]['lr']
         print(f"epoch {epoch+1:3d}  loss={loss.item():.6f}  weight≈{w:.10f}  lr={current_lr:.2e}")
