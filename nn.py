@@ -2,44 +2,45 @@ import torch
 import random
 import math
 from torch import nn
-from torch.utils.data import TensorDataset, DataLoader
+from dataset import create_dataset, verify_predictions
 
-# -------------- 1. Hyper-parameters ----------------
+# -------------- Config ----------------
 SEED          = 0
-TRAIN_UPTO    = 1000        # integers 1…1000 for training
-BATCH_SIZE    = 32
-LR            = 1e-2  # Starting LR, will decay to 1e-6
-EPOCHS        = 5000         # converges in < 1 s on CPU
+LR_BEGIN      = 1e-2  # Starting LR, will decay to LR_END
+LR_END        = 1e-3
+EPOCHS        = 400  
 
-torch.manual_seed(SEED)
+torch.manual_seed(SEED) # for reproducibility
 
-# Visualization related params
-NUM_PLOTS     = 10 # number of plots/steps to show for viz
+# -------------- Visualization Config ----------------
+NUM_PLOTS     = 10 # number of plots/steps to show/record throughout the training loop
 
-# -------------- 2. Dataset -------------------------
-# Generate column vectors [[1], [2], …] so they match nn.Linear's (N, 1) expectation
-x_train = torch.arange(1, TRAIN_UPTO+1, dtype=torch.float32).unsqueeze(1)
-y_train = 10 * x_train
+# -------------- Dataset -------------------------
+ds, dl, x_train, y_train = create_dataset()
 
-ds  = TensorDataset(x_train, y_train)
-dl  = DataLoader(ds, batch_size=BATCH_SIZE, shuffle=True)
-
-# -------------- 3. Model & training loop -----------
+# -------------- Training setup -----------
 model = nn.Sequential(nn.Linear(1, 1, bias=False))   # weight will learn ≈10
 loss_fn   = nn.MSELoss()
-optimiser = torch.optim.SGD(model.parameters(), lr=LR)
+optimiser = torch.optim.SGD(model.parameters(), lr=LR_BEGIN)
 
-# LR scheduler: decay from 1e-2 to 1e-6 over EPOCHS
+# LR scheduler: decay from LR_BEGIN to LR_END over EPOCHS
 # Calculate gamma for exponential decay: final_lr = initial_lr * gamma^epochs
-# 1e-6 = 1e-2 * gamma^50000 => gamma = (1e-6/1e-2)^(1/50000) = (1e-4)^(1/50000)
-gamma = math.pow(1e-6 / LR, 1.0 / EPOCHS)
+# LR_END = LR_BEGIN * gamma^EPOCHS => gamma = (LR_END/LR_BEGIN)^(1/EPOCHS)
+gamma = math.pow(LR_END / LR_BEGIN, 1.0 / EPOCHS)
 scheduler = torch.optim.lr_scheduler.ExponentialLR(optimiser, gamma=gamma)
 
+# -------------- 3. Training loop -----------
+
 # Debug: Check initial state
-print(f"Initial weight: {model[0].weight.item():.6f}")
+print(f"Init NN weight: {model[0].weight.item():.6f}")
 print(f"Data range - x: [{x_train.min().item():.1f}, {x_train.max().item():.1f}], y: [{y_train.min().item():.1f}, {y_train.max().item():.1f}]")
 
 for epoch in range(EPOCHS):
+    if (epoch+1) % (EPOCHS//NUM_PLOTS) == 0:
+        w = model[0].weight.item()
+        current_lr = optimiser.param_groups[0]['lr']
+        print(f"epoch {epoch+1:3d}  loss={loss.item():.6f}  weight≈{w:.10f}  lr={current_lr:.2e}")
+
     for batch_idx, (xb, yb) in enumerate(dl):
         pred = model(xb)
         loss = loss_fn(pred, yb)
@@ -68,23 +69,18 @@ for epoch in range(EPOCHS):
             
         optimiser.step()
         optimiser.zero_grad()
+        # end batch for loop
     
     # Break if NaN detected
     if torch.isnan(loss) or torch.isnan(model[0].weight).any():
+        print("NaN detected, stopping training")
         break
     
     # Step the scheduler after each epoch
     scheduler.step()
-        
-    # Optional tiny log
-    if (epoch+1) % (EPOCHS//NUM_PLOTS) == 0:
-        w = model[0].weight.item()
-        current_lr = optimiser.param_groups[0]['lr']
-        print(f"epoch {epoch+1:3d}  loss={loss.item():.6f}  weight≈{w:.10f}  lr={current_lr:.2e}")
-# -------------- 4. Demo on unseen data -------------
-model.eval()
-test_nums = torch.tensor([[float(torch.randint(1, 10000, (1,))[0])] for _ in range(3)])
-with torch.no_grad():
-    print("\nInference:")
-    for n, out in zip(test_nums.squeeze(1), model(test_nums).squeeze(1)):
-        print(f"{int(n.item()):>5d}  ->  {out.item():.2f}  (ratio: {out.item()/n.item():.5f})")
+# end epoch for loop
+print ("training complete") 
+print(f"epoch {epoch+1:3d}  loss={loss.item():.6f}  weight≈{w:.10f}")
+
+# Evaluate the model
+verify_predictions(model, x_train, y_train)
