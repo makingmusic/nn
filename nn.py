@@ -48,11 +48,6 @@ for epoch in range(EPOCHS):
         # Debug: Check for NaN early
         if torch.isnan(loss) or torch.isnan(model[0].weight).any():
             print(f"NaN detected at epoch {epoch+1}, batch {batch_idx+1}")
-            print(f"  Input batch: {xb[:3].flatten()}")
-            print(f"  Target batch: {yb[:3].flatten()}")
-            print(f"  Predictions: {pred[:3].flatten()}")
-            print(f"  Loss: {loss.item()}")
-            print(f"  Weight: {model[0].weight.item()}")
             break
             
         loss.backward()
