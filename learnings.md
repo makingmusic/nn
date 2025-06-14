@@ -1,0 +1,8 @@
+# things i have learnt while playing around with this
+
+- Large variance in the Y-values can cause "numerical instability" making it more difficult for the network to learn. This can be removed by normalizing data
+- the loss function by default was MSELoss(). However it is possible to define a custom loss function as well. This is ideal because once I changed to that, I found the validation test passed. (Over-fitting risk exists ofcourse, but it is a nice trick to have in your back pocket)
+- Adding more neurons for a simple linear function did not help. It did increase the training time significantly though.
+- ReduceLROnPlateau: is awesome. It will reduce the LR if there is a plateau in learning. Amazing that these functions exist - it must be a common need. Remember however that even in my super simple case, there were upto 10 epochs in which the training loss did not reduce - hence causing an early stop to training.
+- sometimes the model weights become insanely large to compensate for the loss size. If it reaches "NaN", then it is best to adjust your LR or normalize your data or initialize your weights closer to the values you need them to be. Either way, it is not useful to continue training at that point. Do this check before and after the backward loop on the NN.
+- MPS (Metal Performance Shaders) on Apple Silicon shows a performance cross-over point where it becomes significantly faster than CPU for matrix multiplication, with smaller matrices (16000x16000) being slower on MPS due to overhead, while larger matrices (32000x32000) show dramatic speedup (0.01s vs 118s) due to better parallelization and memory management.

@@ -9,7 +9,7 @@ BATCH_SIZE = 32
 def create_dataset():
     # Generate column vectors [[1], [2], …] so they match nn.Linear's (N, 1) expectation
     x_train = torch.arange(1, TRAIN_UPTO+1, dtype=torch.float32).unsqueeze(1)
-    y_train = (10 * x_train) + 1000
+    y_train = (100 * x_train) + 100
 
     ds = TensorDataset(x_train, y_train)
     dl = DataLoader(ds, batch_size=BATCH_SIZE, shuffle=True)
