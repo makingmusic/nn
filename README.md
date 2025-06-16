@@ -1,6 +1,9 @@
 # nn
 
-A PyTorch neural network that learns the mystical art of multiplying by 10. I have put my learnings in [learnings.md](learnings.md)
+This readme is mostly generated automatically  - yes I requested humour. I started this to learn NN by doing. Similar to how rl_gridworld experiments. RL_gridworld was exploding in state-action pairs so it told me to try DQN, so I decided to first learn NNs and then try DQN on gridworlds.
+
+I have put my learnings in [learnings.md](learnings.md). This part is self-written and probably the most useful thing. 
+
 
 ## TL;DR (how to run)
 
