@@ -53,20 +53,6 @@ def create_dataset(dataset_type='1layer'):
     return dl, x_train, y_train
 
 
-def verify_predictions(model, x_train, y_train):
-    model.eval()
-    with torch.no_grad():
-        deviation_count = 0
-        total_points = len(x_train)
-        for x, y in zip(x_train, y_train):
-            pred = model(x)
-            deviation = abs(pred.item() - y.item()) / y.item()
-            if deviation > 0.01:  # 1% threshold
-                #print(f"x: {x.item()}, y: {y.item()}, pred: {pred.item()}, deviation: {deviation:.2%}")
-                deviation_count += 1
-        
-        print(f"\nTotal deviations: {deviation_count} out of {total_points} points ({deviation_count/total_points:.2%})")
-
 def create_model(model_type='1layer'):
     class OneLayerModel(nn.Module):
         def __init__(self):
@@ -114,3 +100,19 @@ def create_model(model_type='1layer'):
         raise ValueError(f"Unknown model type: {model_type}. Choose from {list(model_classes.keys())}")
     
     return model_classes[model_type]()
+
+# This part should become a separate file perhaps. It is an entire eval script when it grows up.
+# TODO: Write a better eval than the dumb "1% deviation" one that i have written today.
+def verify_predictions(model, x_train, y_train):
+    model.eval()
+    with torch.no_grad():
+        deviation_count = 0
+        total_points = len(x_train)
+        for x, y in zip(x_train, y_train):
+            pred = model(x)
+            deviation = abs(pred.item() - y.item()) / y.item()
+            if deviation > 0.01:  # 1% threshold
+                #print(f"x: {x.item()}, y: {y.item()}, pred: {pred.item()}, deviation: {deviation:.2%}")
+                deviation_count += 1
+        
+        print(f"\nTotal deviations: {deviation_count} out of {total_points} points ({deviation_count/total_points:.2%})")

@@ -1,7 +1,10 @@
 # things i have learnt while playing around with this
 
+- For the simplest of problems to learn, a bad configuration will make the computation need to "learn" much higher (think exponential). So the first myth that was busted in my head was "throw compute and data at the problem and sit back" is not a possible approach. One needs to learn and appreciate the math behind what is going on.
+
+
 - Large variance in the Y-values can cause "numerical instability" making it more difficult for the network to learn. This can be removed by normalizing data
-- the loss function by default was MSELoss(). However it is possible to define a custom loss function as well. This is ideal because once I changed to that, I found the validation test passed. (Over-fitting risk exists ofcourse, but it is a nice trick to have in your back pocket)
+- the loss function by default was MSELoss(). However it is possible to define a custom loss function as well. This is ideal because once I changed to that, I found the validation test passed. (Over-fitting risk exists ofcourse, but it is a nice trick to have in your back pocket). TODO: Write a better eval than the dumb "1% deviation" one that i have written today.
 - Adding more neurons for a simple linear function did not help. It did increase the training time significantly though.
 - ReduceLROnPlateau: is awesome. It will reduce the LR if there is a plateau in learning. Amazing that these functions exist - it must be a common need. Remember however that even in my super simple case, there were upto 10 epochs in which the training loss did not reduce - hence causing an early stop to training.
 - sometimes the model weights become insanely large to compensate for the loss size. If it reaches "NaN", then it is best to adjust your LR or normalize your data or initialize your weights closer to the values you need them to be. Either way, it is not useful to continue training at that point. Do this check before and after the backward loop on the NN.
