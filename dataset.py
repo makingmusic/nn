@@ -69,7 +69,7 @@ def create_model(model_type='1layer'):
             super().__init__()
             self.network = nn.Sequential(
                 nn.Linear(1, 4),
-                nn.Tanh(),  # Tanh activation works better for quadratic functions
+                nn.ReLU(),  # Tanh activation works better for quadratic functions
                 nn.Linear(4, 1)
             )
         
@@ -100,6 +100,55 @@ def create_model(model_type='1layer'):
         raise ValueError(f"Unknown model type: {model_type}. Choose from {list(model_classes.keys())}")
     
     return model_classes[model_type]()
+
+
+def print_model_summary(model):
+    print("\nModel Architecture:")
+    print(model)
+    
+    # Collect all parameters
+    params = {}
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            params[name] = param.detach().cpu().numpy().round(4)
+    
+    # Print weights in matrix format
+    print("\nNeural Network Weights and Biases:")
+    print("=" * 80)
+    
+    # Get the number of layers (excluding activation functions)
+    num_layers = len([m for m in model.modules() if isinstance(m, nn.Linear)])
+    
+    # Get dimensions of each layer
+    layer_dims = []
+    for i in range(num_layers):
+        weight_name = f"network.{i*2}.weight"  # *2 because of ReLU layers
+        if weight_name in params:
+            layer_dims.append(params[weight_name].shape)
+    
+    # Print each layer's weights and biases
+    for layer_idx in range(num_layers):
+        weight_name = f"network.{layer_idx*2}.weight"
+        bias_name = f"network.{layer_idx*2}.bias"
+        
+        print(f"\nLayer {layer_idx + 1}:")
+        print("-" * 40)
+        
+        # Print weights
+        print("Weights:")
+        weights = params[weight_name]
+        for row in weights:
+            print("  " + " ".join(f"{x:8.4f}" for x in row))
+        
+        # Print biases
+        print("\nBiases:")
+        biases = params[bias_name]
+        print("  " + " ".join(f"{x:8.4f}" for x in biases))
+        print("-" * 40)
+    
+    # Print total parameters
+    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"\nTotal trainable parameters: {total_params:,}")
 
 # This part should become a separate file perhaps. It is an entire eval script when it grows up.
 # TODO: Write a better eval than the dumb "1% deviation" one that i have written today.

@@ -2,15 +2,15 @@ import torch
 import random
 import math
 from torch import nn
-from dataset import create_dataset, verify_predictions, create_model
+from dataset import create_dataset, verify_predictions, create_model, print_model_summary
 
 # -------------- Config ----------------
 SEED          = 0
-LR_BEGIN      = 1e-2  # Reduced from 1e-1
-LR_END        = 1e-5  # Reduced from 1e-2
-EPOCHS        = 50000  
-TRAINING_TYPE = 'quadratic' # # 'linear', 'quadratic', 'sine', 'exponential', 'step'
-MODEL_TYPE    = '3layer' # '1layer', '2layer', '3layer'
+LR_BEGIN      = 1e-2  
+LR_END        = 1e-5  
+EPOCHS        = 1000  
+TRAINING_TYPE = 'linear' # # 'linear', 'quadratic', 'sine', 'exponential', 'step'
+MODEL_TYPE    = '2layer' # '1layer', '2layer', '3layer'
 
 
 torch.manual_seed(SEED) # for reproducibility
@@ -140,3 +140,5 @@ print(f"Final loss: {avg_epoch_loss:.4f}")
 # Evaluate the model
 model.eval()  # Set model to evaluation mode
 verify_predictions(model, x_train, y_train)
+
+print_model_summary(model)
