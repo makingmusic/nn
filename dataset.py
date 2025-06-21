@@ -68,9 +68,9 @@ def create_model(model_type='1layer'):
         def __init__(self):
             super().__init__()
             self.network = nn.Sequential(
-                nn.Linear(1, 4),
+                nn.Linear(1, 32),
                 nn.ReLU(),  # Tanh activation works better for quadratic functions
-                nn.Linear(4, 1)
+                nn.Linear(32, 1)
             )
         
         def forward(self, x):

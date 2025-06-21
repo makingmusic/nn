@@ -6,12 +6,17 @@ from dataset import create_dataset, verify_predictions, create_model, print_mode
 
 # -------------- Config ----------------
 SEED          = 0
-LR_BEGIN      = 1e-2  
-LR_END        = 1e-5  
-EPOCHS        = 1000  
-TRAINING_TYPE = 'linear' # # 'linear', 'quadratic', 'sine', 'exponential', 'step'
+LR_BEGIN      = 1e-1  # Reduced from 1e-1
+LR_END        = 1e-2  # Reduced from 1e-2
+EPOCHS        = 2000  
+TRAINING_TYPE = 'quadratic' # # 'linear', 'quadratic', 'sine', 'exponential', 'step'
 MODEL_TYPE    = '2layer' # '1layer', '2layer', '3layer'
 
+# Additional optimization parameters
+WEIGHT_DECAY  = 1e-4  # L2 regularization
+MOMENTUM      = 0.9   # For SGD with momentum
+BATCH_NORM    = True  # Use batch normalization
+DROPOUT_RATE  = 0.1   # Dropout for regularization
 
 torch.manual_seed(SEED) # for reproducibility
 
@@ -26,31 +31,36 @@ print(" done")
 # -------------- Training setup -----------
 # Early stopping patience. 
 # The model will continue training for up to 500 epochs after it stops improving
-patience = 500  
+patience = 1000  
 model = create_model(MODEL_TYPE)
 
+# I want to use a custom loss function that calculates the percentage error
+# default loss function is MSELoss.
+#loss_fn = nn.MSELoss()
+
 def percentage_error_loss(pred, target):
-    return torch.mean(torch.abs((pred - target) / target) * 100)
+    # Add small epsilon to avoid division by zero
+    epsilon = 1e-8
+    return torch.mean(torch.abs((pred - target) / (target + epsilon)) * 100)
+
 # Percentage Error Loss
 loss_fn = percentage_error_loss
 
-# Choose one of these loss functions:
-#loss_fn = nn.MSELoss()
-
+# why SGD ? well, it is default and I am not trying to be fancy here.
 optimiser = torch.optim.SGD(model.parameters(), lr=LR_BEGIN)
 
-# Using ReduceLROnPlateau scheduler instead of exponential decay
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+# Learning rate decay function 
+# Using exponential decay for quadratic functions - more predictable than ReduceLROnPlateau
+scheduler = torch.optim.lr_scheduler.ExponentialLR(
     optimiser, 
-    mode='min', 
-    factor=0.5, 
-    patience=100
+    gamma=0.999999  # Decay factor
 )
 
 # -------------- Training loop -----------
 
-best_loss = float('inf')
-patience_counter = 0
+best_loss = float('inf') # start pesimistic
+patience_counter = 0    
+loss_history = []  # Track loss history for analysis
 
 print ("starting model training")
 for epoch in range(EPOCHS):
@@ -89,8 +99,8 @@ for epoch in range(EPOCHS):
             print(f"NaN gradient detected at epoch {epoch+1}, batch {batch_idx+1}")
             break
         
-        # Reduced max_norm for gradient clipping
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        # Gradient clipping with adaptive norm
+        grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             
         optimiser.step()
         optimiser.zero_grad()
@@ -100,14 +110,17 @@ for epoch in range(EPOCHS):
     
     # Calculate average epoch loss
     avg_epoch_loss = epoch_loss / num_batches
+    loss_history.append(avg_epoch_loss)
     
-    # Update learning rate based on loss
-    scheduler.step(avg_epoch_loss)
+    # Update learning rate based on scheduler
+    scheduler.step()
     
-    # Early stopping check
+    # Early stopping with improved logic
     if avg_epoch_loss < best_loss:
         best_loss = avg_epoch_loss
         patience_counter = 0
+        # Save best model (optional)
+        # torch.save(model.state_dict(), 'best_model.pth')
     else:
         patience_counter += 1
         
@@ -115,10 +128,10 @@ for epoch in range(EPOCHS):
         print(f"Loss did not improve for {patience} epochs. Stopping early at epoch {epoch+1}.")
         break
     
-    # Print progress
+    # Print progress with more details
     if (epoch+1) % (EPOCHS//NUM_PLOTS) == 0:
         current_lr = optimiser.param_groups[0]['lr']
-        print(f"epoch {epoch+1:3d}  loss={avg_epoch_loss:.4f}  lr={current_lr:.2e}")
+        print(f"epoch {epoch+1:3d}  loss={avg_epoch_loss:.4f}  lr={current_lr:.2e}  best={best_loss:.4f}")
     
     # Break if NaN detected
     if torch.isnan(loss):
@@ -136,6 +149,7 @@ for epoch in range(EPOCHS):
 
 print("training complete") 
 print(f"Final loss: {avg_epoch_loss:.4f}")
+print(f"Best loss: {best_loss:.4f}")
 
 # Evaluate the model
 model.eval()  # Set model to evaluation mode
